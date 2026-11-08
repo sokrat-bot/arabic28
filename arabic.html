@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Арабский алфавит — 28 букв</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0f172a;
+            --navy-raised: #151f34;
+            --navy-soft: #1d2940;
+            --white: #f8fafc;
+            --muted: #a7b1c3;
+            --gold: #eab308;
+            --gold-pale: #f6d568;
+            --terra: #c2410c;
+            --terra-light: #f0783b;
+            --serif: "Lora", Georgia, serif;
+            --sans: "Inter", Arial, sans-serif;
+            --arabic: "Amiri", "Noto Naskh Arabic", serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1a2a4a 50%, #0b1324 100%);
+            color: var(--white);
+            font-family: var(--sans);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 50px; }
+        header h1 { font-family: var(--serif); font-size: 2.5rem; color: var(--gold-pale); margin-bottom: 10px; }
+        header p { color: var(--muted); font-size: 1rem; }
+        .progress-bar { width: 100%; height: 8px; background: #29344a; border-radius: 99px; margin: 20px 0 10px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--terra), var(--gold)); border-radius: 99px; transition: width 0.5s ease; }
+        .progress-text { color: var(--muted); font-size: 0.85rem; text-align: right; }
+        
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .letter-card {
+            perspective: 1000px;
+            cursor: pointer;
+            height: 220px;
+        }
+        .letter-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .letter-card.flipped .letter-card-inner { transform: rotateY(180deg); }
+        .letter-front, .letter-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            background: linear-gradient(145deg, #1b2941, #172237);
+            text-align: center;
+        }
+        .letter-front { z-index: 2; }
+        .letter-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(145deg, #202d43, #172237);
+            border-color: var(--gold);
+        }
+        .letter-glyph { font-family: var(--arabic); font-size: 4.5rem; color: var(--gold-pale); line-height: 1.2; }
+        .letter-name { font-family: var(--serif); font-size: 1.1rem; color: var(--white); margin-top: 5px; }
+        .letter-hint { font-size: 0.7rem; color: var(--muted); margin-top: 10px; }
+        .letter-hint span { color: var(--terra-light); }
+        
+        .back-sound { font-family: var(--serif); font-size: 1.2rem; color: var(--gold-pale); margin-bottom: 5px; }
+        .back-example-ar { font-family: var(--arabic); font-size: 2rem; color: var(--white); }
+        .back-example-tr { font-size: 0.8rem; color: var(--muted); }
+        
+        .letter-card.completed .letter-front { border-color: #4ade80; box-shadow: 0 0 15px rgba(74, 222, 128, 0.2); }
+        
+        footer { text-align: center; margin-top: 60px; color: var(--muted); font-size: 0.8rem; padding-bottom: 20px; }
+        @media (max-width: 600px) {
+            .letters-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .letter-card { height: 180px; }
+            .letter-glyph { font-size: 3.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Арабский алфавит</h1>
+            <p>Нажмите на карточку, чтобы увидеть звук и пример слова</p>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">Изучено 0 из 28</div>
+        </header>
+        
+        <div class="letters-grid" id="lettersGrid"></div>
+        
+        <footer>
+            <p>© 2026 · Тренажёр арабского языка</p>
+        </footer>
+    </div>
+
+    <script>
+        const LETTERS = [
+            { id: "alif", glyph: "ا", name: "Алиф", sound: "а · ā", exampleAr: "أَسَدٌ", exampleTr: "ʾasad · лев" },
+            { id: "ba", glyph: "ب", name: "Ба", sound: "б", exampleAr: "بَيْتٌ", exampleTr: "bayt · дом" },
+            { id: "ta", glyph: "ت", name: "Та", sound: "т", exampleAr: "تَمْرٌ", exampleTr: "tamr · финики" },
+            { id: "tha", glyph: "ث", name: "Са", sound: "с · межзубный", exampleAr: "ثَوْبٌ", exampleTr: "thawb · одежда" },
+            { id: "jim", glyph: "ج", name: "Джим", sound: "дж", exampleAr: "جَمِيلٌ", exampleTr: "jamīl · красивый" },
+            { id: "ha", glyph: "ح", name: "Ха", sound: "ḥ · мягкий", exampleAr: "حَلِيبٌ", exampleTr: "ḥalīb · молоко" },
+            { id: "kha", glyph: "خ", name: "Хо", sound: "х · kh", exampleAr: "خُبْزٌ", exampleTr: "khubz · хлеб" },
+            { id: "dal", glyph: "د", name: "Даль", sound: "д", exampleAr: "دَارٌ", exampleTr: "dār · дом" },
+            { id: "dhal", glyph: "ذ", name: "Заль", sound: "з · межзубный", exampleAr: "ذَهَبٌ", exampleTr: "dhahab · золото" },
+            { id: "ra", glyph: "ر", name: "Ра", sound: "р", exampleAr: "رَجُلٌ", exampleTr: "rajul · мужчина" },
+            { id: "zay", glyph: "ز", name: "Зай", sound: "з", exampleAr: "زَيْتٌ", exampleTr: "zayt · масло" },
+            { id: "sin", glyph: "س", name: "Син", sound: "с", exampleAr: "سَمَاءٌ", exampleTr: "samāʾ · небо" },
+            { id: "shin", glyph: "ش", name: "Шин", sound: "ш", exampleAr: "شَمْسٌ", exampleTr: "shams · солнце" },
+            { id: "sad", glyph: "ص", name: "Сад", sound: "с · твёрдый", exampleAr: "صَبْرٌ", exampleTr: "ṣabr · терпение" },
+            { id: "dad", glyph: "ض", name: "Дад", sound: "д · твёрдый", exampleAr: "ضَوْءٌ", exampleTr: "ḍawʾ · свет" },
+            { id: "ta2", glyph: "ط", name: "Та (тв.)", sound: "т · твёрдый", exampleAr: "طَيْرٌ", exampleTr: "ṭayr · птица" },
+            { id: "za", glyph: "ظ", name: "За", sound: "з · твёрдый", exampleAr: "ظِلٌّ", exampleTr: "ẓill · тень" },
+            { id: "ayn", glyph: "ع", name: "Айн", sound: "ʿ · гортанный", exampleAr: "عَيْنٌ", exampleTr: "ʿayn · глаз" },
+            { id: "ghayn", glyph: "غ", name: "Гайн", sound: "г · gh", exampleAr: "غَيْمٌ", exampleTr: "ghaym · облако" },
+            { id: "fa", glyph: "ف", name: "Фа", sound: "ф", exampleAr: "فَمٌ", exampleTr: "fam · рот" },
+            { id: "qaf", glyph: "ق", name: "Каф", sound: "к · q", exampleAr: "قَلْبٌ", exampleTr: "qalb · сердце" },
+            { id: "kaf", glyph: "ك", name: "Кяф", sound: "к", exampleAr: "كِتَابٌ", exampleTr: "kitāb · книга" },
+            { id: "lam", glyph: "ل", name: "Лям", sound: "л", exampleAr: "لَيْلٌ", exampleTr: "layl · ночь" },
+            { id: "mim", glyph: "م", name: "Мим", sound: "м", exampleAr: "مَاءٌ", exampleTr: "māʾ · вода" },
+            { id: "nun", glyph: "ن", name: "Нун", sound: "н", exampleAr: "نُورٌ", exampleTr: "nūr · свет" },
+            { id: "ha2", glyph: "ه", name: "Ха (мягк.)", sound: "х · h", exampleAr: "هَوَاءٌ", exampleTr: "hawāʾ · воздух" },
+            { id: "waw", glyph: "و", name: "Вав", sound: "в · w", exampleAr: "وَرْدٌ", exampleTr: "ward · роза" },
+            { id: "ya", glyph: "ي", name: "Йа", sound: "й", exampleAr: "يَدٌ", exampleTr: "yad · рука" }
+        ];
+
+        const STORAGE_KEY = "arabic_28_letters_progress";
+        let completed = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        const grid = document.getElementById("lettersGrid");
+
+        function updateProgress() {
+            const percent = (completed.length / LETTERS.length) * 100;
+            document.getElementById("progressFill").style.width = percent + "%";
+            document.getElementById("progressText").innerText = `Изучено ${completed.length} из ${LETTERS.length}`;
+        }
+
+        LETTERS.forEach(letter => {
+            const card = document.createElement("div");
+            card.className = "letter-card";
+            if (completed.includes(letter.id)) card.classList.add("completed");
+            
+            card.innerHTML = `
+                <div class="letter-card-inner">
+                    <div class="letter-front">
+                        <div class="letter-glyph">${letter.glyph}</div>
+                        <div class="letter-name">${letter.name}</div>
+                        <div class="letter-hint">Нажмите <span>↗</span></div>
+                    </div>
+                    <div class="letter-back">
+                        <div class="back-sound">${letter.sound}</div>
+                        <div class="back-example-ar">${letter.exampleAr}</div>
+                        <div class="back-example-tr">${letter.exampleTr}</div>
+                    </div>
+                </div>
+            `;
+
+            card.addEventListener("click", () => {
+                card.classList.toggle("flipped");
+                if (!completed.includes(letter.id)) {
+                    completed.push(letter.id);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+                    card.classList.add("completed");
+                    updateProgress();
+                }
+            });
+
+            grid.appendChild(card);
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>
